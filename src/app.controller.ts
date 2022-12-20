@@ -18,10 +18,16 @@ export class AppController {
   }
   @Patch('create/collection')
   @ApiTags('Create collection')
-  @ApiQuery({ name: 'newCollection', required: false })
-  async createRFT(
+  @ApiQuery({ name: 'newCollection', required: false, enum: ['true', 'false'] })
+  async createCollectionRFT(
     @Query('newCollection') newCollection: TypeCreation = TypeCreation.false,
   ): Promise<any> {
     return await this.appService.createCollection(newCollection);
+  }
+
+  @Patch('create/token')
+  @ApiTags('Create token')
+  async createRFT(@Query('amount') amount: number): Promise<any> {
+    return await this.appService.createRFToken(amount);
   }
 }

@@ -1,12 +1,10 @@
 import { Inject, Injectable, OnModuleInit } from '@nestjs/common';
 import { Client } from '@unique-nft/substrate-client';
 import { ConfigService } from '@nestjs/config';
-import { KeyringAccount, KeyringProvider } from '@unique-nft/accounts/keyring';
+import { KeyringProvider } from '@unique-nft/accounts/keyring';
 import { Account } from '@unique-nft/accounts';
 import { HelperService } from '@app/api/helpers/helper.service';
-import { KeyringPairs$Json } from '@polkadot/ui-keyring/types';
 import { KeyringPair } from '@polkadot/keyring/types';
-import { ClientSigner } from '@unique-nft/substrate-client/types';
 import { TypeCreation } from '@app/api/app.controller';
 
 @Injectable()
@@ -31,7 +29,8 @@ export class AppService implements OnModuleInit {
     this.collectionId = parseInt(this.config.get('app.collectionId'));
     if (isNaN(this.collectionId) || this.collectionId === undefined) {
       const address = this.signer.instance.address;
-      await this.creationCollectionRFT(address);
+      console.log(address);
+      // await this.creationCollectionRFT(address);
     }
   }
 
@@ -56,6 +55,7 @@ export class AppService implements OnModuleInit {
     tokenPrefix = 'TRFT',
   ): Promise<number> {
     const signer = this.signer.getSigner();
+    console.log(signer);
     const schema = {
       schemaName: 'unique', // please don't touch
       schemaVersion: '1.0.0',
@@ -90,10 +90,10 @@ export class AppService implements OnModuleInit {
         name,
         tokenPrefix,
         schema,
-        mode: 'ReFungible',
       },
       { signer },
-    )) as any; // TODO: SDK types are broken, waiting for fix
+    )) as any;
+
     console.log(JSON.stringify(result));
     await this.helper.updateEnv('COLLECTION_ID', result?.parsed?.collectionId);
     if (!result?.parsed?.collectionId)
@@ -114,6 +114,7 @@ export class AppService implements OnModuleInit {
     first = 'Default',
     second = 'Default 2',
   ): Promise<number> {
+    const signer = this.signer.getSigner();
     const data = {
       image: {
         url: `https://ipfs.uniquenetwork.dev/ipfs/QmUpNzjmAnnrrYgtLeWC6UEPaH2c37nzuhiU6UiwYq5pSW`,
@@ -128,14 +129,22 @@ export class AppService implements OnModuleInit {
         },
       },
     };
-    const result = await this.sdk.refungible.createToken.submitWaitResult({
-      collectionId,
-      address,
-      data,
-      amount,
-    });
+    const result = await this.sdk.refungible.createToken.submitWaitResult(
+      {
+        collectionId,
+        address,
+        data,
+        amount,
+      },
+      { signer },
+    );
     if (!result.parsed?.tokenId)
       throw new Error(`Created token doesn't have id: ${result}`);
     return result.parsed.tokenId;
+  }
+
+  async createRFToken(amount: number): Promise<any> {
+    const address = this.signer.instance.address;
+    return await this.createToken(address, this.collectionId);
   }
 }
